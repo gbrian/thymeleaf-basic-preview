@@ -2,7 +2,7 @@
   "name": "thymeleaf-basic-preview",
   "displayName": "Thymeleaf Basic Preview",
   "description": "Preview Thymeleaf HTML templates with JSON data in VSCode — no server required",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "gbrian",
   "license": "MIT",
   "repository": {

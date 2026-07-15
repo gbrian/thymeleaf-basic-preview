@@ -141,6 +141,9 @@ function processThymeleaf(
   // Step 1: strip xmlns:th declaration (cosmetic)
   html = html.replace(/\s*xmlns:th="[^"]*"/g, '')
 
+  // Step 2: process th:each loops
+  html = processEachLoops(html, data, i18n)
+
   // Step 3: resolve th:text attributes
   html = html.replace(
     /(<[^>]+)\s+th:text="([^"]*)"([^>]*>)([^<]*)/g,
@@ -150,17 +153,134 @@ function processThymeleaf(
     }
   )
 
-  // Step 4: resolve inline ${...} expressions in text nodes and attributes
+  // Step 4: resolve th:classappend attributes
+  html = processClassAppend(html, data, i18n)
+
+  // Step 5: resolve inline ${...} expressions in text nodes and attributes
   html = html.replace(/\$\{([^}]+)\}/g, (_match: string, varName: string) => {
     return escapeHtml(String(resolveVar(varName.trim(), data)))
   })
 
-  // Step 5: resolve remaining #{...} i18n keys in text
+  // Step 6: resolve remaining #{...} i18n keys in text
   html = html.replace(/#\{([^}]+)\}/g, (_match: string, key: string) => {
     return escapeHtml(i18n[key.trim()] ?? key.trim())
   })
 
   return html
+}
+
+// ---------------------------------------------------------------------------
+// th:each loop processor
+// ---------------------------------------------------------------------------
+function processEachLoops(
+  html: string,
+  data: Record<string, unknown>,
+  i18n: Record<string, string>
+): string {
+  // Match any opening tag that contains th:each="varName : ${listExpr}"
+  const eachTagPattern = /<([a-zA-Z][a-zA-Z0-9]*)((?:[^>](?!th:each))*?)\s+th:each="([^"]+)"((?:[^>])*?)>([\s\S]*?)<\/\1>/g
+
+  return html.replace(
+    eachTagPattern,
+    (
+      _match: string,
+      tagName: string,
+      attrsBefore: string,
+      eachExpr: string,
+      attrsAfter: string,
+      innerContent: string
+    ): string => {
+      // Parse "varName : ${listExpr}" or "varName : ${listExpr}"
+      const eachMatch = eachExpr.trim().match(/^(\w+)\s*:\s*\$\{([^}]+)\}$/)
+      if (!eachMatch) {
+        return _match
+      }
+
+      const iterVar = eachMatch[1]
+      const listPath = eachMatch[2].trim()
+      const listValue = resolveVar(listPath, data)
+
+      if (!Array.isArray(listValue)) {
+        return `<${tagName}${attrsBefore}${attrsAfter}>${innerContent}</${tagName}>`
+      }
+
+      return listValue
+        .map((item: unknown): string => {
+          // Build a scoped data context merging the loop variable
+          const scopedData: Record<string, unknown> = {
+            ...data,
+            [iterVar]: item
+          }
+          // Process inner content with scoped data
+          const processedInner = processThymeleafScoped(innerContent, scopedData, i18n)
+          return `<${tagName}${attrsBefore}${attrsAfter}>${processedInner}</${tagName}>`
+        })
+        .join('\n')
+    }
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Scoped Thymeleaf processor — used inside th:each iterations
+// ---------------------------------------------------------------------------
+function processThymeleafScoped(
+  html: string,
+  data: Record<string, unknown>,
+  i18n: Record<string, string>
+): string {
+  // Resolve th:text
+  html = html.replace(
+    /(<[^>]+)\s+th:text="([^"]*)"([^>]*>)([^<]*)/g,
+    (_match: string, openTagStart: string, thExpr: string, openTagEnd: string, _originalContent: string): string => {
+      const resolved = resolveExpression(thExpr, data, i18n)
+      return `${openTagStart}${openTagEnd}${escapeHtml(resolved)}`
+    }
+  )
+
+  // Resolve th:classappend
+  html = processClassAppend(html, data, i18n)
+
+  // Resolve inline ${...}
+  html = html.replace(/\$\{([^}]+)\}/g, (_match: string, varName: string): string => {
+    return escapeHtml(String(resolveVar(varName.trim(), data)))
+  })
+
+  // Resolve #{...} i18n
+  html = html.replace(/#\{([^}]+)\}/g, (_match: string, key: string): string => {
+    return escapeHtml(i18n[key.trim()] ?? key.trim())
+  })
+
+  return html
+}
+
+// ---------------------------------------------------------------------------
+// th:classappend processor
+// ---------------------------------------------------------------------------
+function processClassAppend(
+  html: string,
+  data: Record<string, unknown>,
+  i18n: Record<string, string>
+): string {
+  return html.replace(
+    /(<[a-zA-Z][a-zA-Z0-9]*(?:[^>]*?))(\s+class="([^"]*)")?((?:[^>]*?)\s+th:classappend="([^"]*)")((?:[^>]*?)>)/g,
+    (
+      _match: string,
+      tagStart: string,
+      existingClassAttr: string,
+      existingClass: string,
+      _thClassAppendAttr: string,
+      appendExpr: string,
+      tagEnd: string
+    ): string => {
+      const appended = resolveExpression(appendExpr, data, i18n)
+      const base = existingClass ? existingClass.trim() : ''
+      const newClass = base ? `${base} ${appended}` : appended
+      if (existingClassAttr) {
+        return `${tagStart} class="${newClass}"${tagEnd}`
+      }
+      return `${tagStart} class="${newClass}"${tagEnd}`
+    }
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -186,14 +306,14 @@ function resolveExpression(
 
   if (expr.startsWith('|') && expr.endsWith('|')) {
     const inner = expr.slice(1, -1)
-    return inner.replace(/\$\{([^}]+)\}/g, (_m: string, v: string) =>
+    return inner.replace(/\$\{([^}]+)\}/g, (_m: string, v: string): string =>
       String(resolveVar(v.trim(), data))
     )
   }
 
   const parts = splitConcatExpression(expr)
   return parts
-    .map((part: string) => {
+    .map((part: string): string => {
       part = part.trim()
       if (part.startsWith("'") && part.endsWith("'")) {
         return part.slice(1, -1)
