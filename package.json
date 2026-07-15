@@ -1,0 +1,51 @@
+{
+  "name": "thymeleaf-basic-preview",
+  "displayName": "Thymeleaf Basic Preview",
+  "description": "Preview Thymeleaf HTML templates with JSON data in VSCode — no server required",
+  "version": "0.0.1",
+  "publisher": "gbrian",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gbrian/thymeleaf-basic-preview-vscode"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["thymeleaf", "preview", "html", "template", "spring"],
+  "activationEvents": [
+    "onLanguage:html"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "thymeleaf-preview.openPreview",
+        "title": "Open Thymeleaf Preview",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "thymeleaf-preview.openPreview",
+          "when": "editorLangId == html",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npm run compile && vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.0"
+  }
+}
