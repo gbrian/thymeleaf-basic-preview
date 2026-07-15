@@ -42,7 +42,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "build:java": "cd java && mvn -q package -DskipTests",
-    "package": "npm run build:java && npm run compile && vsce package"
+    "package": "npm run build:java && npm run compile && vsce package && bash scripts/rename-vsix.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

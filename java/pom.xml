@@ -17,6 +17,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
     <jackson.version>2.16.1</jackson.version>
+    <jakarta.validation.version>3.0.2</jakarta.validation.version>
   </properties>
 
   <dependencies>
@@ -30,11 +31,15 @@
       <artifactId>jackson-databind</artifactId>
       <version>${jackson.version}</version>
     </dependency>
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+      <version>${jakarta.validation.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
-      <!-- Compile sources -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
