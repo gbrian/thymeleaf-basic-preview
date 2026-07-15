@@ -2,9 +2,10 @@
   "name": "thymeleaf-basic-preview",
   "displayName": "Thymeleaf Basic Preview",
   "description": "Preview Thymeleaf HTML templates with JSON data in VSCode — no server required",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "publisher": "gbrian",
   "license": "MIT",
+  "icon": "assets/logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/gbrian/thymeleaf-basic-preview-vscode"
@@ -37,10 +38,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run build:java && npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "npm run compile && vsce package"
+    "build:java": "cd java && mvn -q package -DskipTests",
+    "package": "npm run build:java && npm run compile && vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

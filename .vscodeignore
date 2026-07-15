@@ -1,7 +1,14 @@
 .vscode/**
 .vscode-test/**
+out/test/**
 src/**
+java/**
+!bin/thymeleaf-cli.jar
 .gitignore
-tsconfig.json
+.yarnrc
+webpack.config.js
+vsc-extension-quickstart.md
+**/tsconfig.json
+**/.eslintrc.json
 **/*.map
-node_modules/**
+**/*.ts

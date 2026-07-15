@@ -1,0 +1,34 @@
+{
+  "app": {
+    "name": "Acme Operations Dashboard"
+  },
+  "currentUser": {
+    "name": "Bob Steinberg",
+    "role": "MANAGER"
+  },
+  "kpis": [
+    { "label": "Total Revenue",   "value": "$84,320", "trend": "up"      },
+    { "label": "Active Users",    "value": "1,204",   "trend": "up"      },
+    { "label": "Open Tickets",    "value": "37",      "trend": "down"    },
+    { "label": "Uptime (30d)",    "value": "99.97%",  "trend": "neutral" }
+  ],
+  "orders": [
+    { "id": "ORD-8821", "customer": "Claire Dubois",   "amount": "320.00", "status": "SUCCESS" },
+    { "id": "ORD-8820", "customer": "Marco Rossi",     "amount": "85.50",  "status": "PENDING" },
+    { "id": "ORD-8819", "customer": "Yuki Tanaka",     "amount": "512.00", "status": "SUCCESS" },
+    { "id": "ORD-8818", "customer": "Hans Müller",     "amount": "47.00",  "status": "FAILED"  },
+    { "id": "ORD-8817", "customer": "Sofia Andersen",  "amount": "198.99", "status": "SUCCESS" },
+    { "id": "ORD-8816", "customer": "Liam O'Brien",    "amount": "63.20",  "status": "PENDING" }
+  ],
+  "servers": [
+    { "name": "web-01",   "region": "EU-West",    "load": 23 },
+    { "name": "web-02",   "region": "EU-West",    "load": 61 },
+    { "name": "api-01",   "region": "US-East",    "load": 87 },
+    { "name": "worker-01","region": "AP-South",   "load": 44 }
+  ],
+  "alerts": [
+    { "level": "warn",  "message": "api-01 CPU load exceeded 85% for more than 10 minutes." },
+    { "level": "error", "message": "worker-01 failed to process 3 jobs in the last hour."   },
+    { "level": "info",  "message": "Scheduled maintenance window on Saturday 02:00–04:00 UTC." }
+  ]
+}

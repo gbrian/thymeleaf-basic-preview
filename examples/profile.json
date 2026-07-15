@@ -1,0 +1,14 @@
+{
+  "user": {
+    "name": "Alice Moreau",
+    "initials": "AM",
+    "bio": "Full-stack developer passionate about clean architecture and great UX.",
+    "email": "alice.moreau@example.com",
+    "location": "Lyon, France",
+    "joinedYear": 2021,
+    "role": "ADMIN",
+    "premium": true,
+    "active": true,
+    "skills": ["TypeScript", "Spring Boot", "Thymeleaf", "PostgreSQL", "Docker"]
+  }
+}

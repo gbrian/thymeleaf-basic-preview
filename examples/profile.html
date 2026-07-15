@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title th:text="'Profile: ' + ${user.name}">Profile Page</title>
+  <style>
+    body { font-family: sans-serif; max-width: 680px; margin: 2rem auto; color: #333; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
+    .avatar { width: 80px; height: 80px; border-radius: 50%; background: #89b4fa; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #fff; margin-bottom: 1rem; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+    .badge-admin { background: #f38ba8; color: #1e1e2e; }
+    .badge-user  { background: #a6e3a1; color: #1e1e2e; }
+    .badge-premium { background: #f9e2af; color: #1e1e2e; }
+    .tag { display: inline-block; background: #eff1f5; border-radius: 4px; padding: 2px 8px; margin: 2px; font-size: 0.85rem; }
+    .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 0.5rem; }
+    .field { margin-bottom: 0.75rem; }
+    .field label { font-weight: bold; display: block; font-size: 0.9rem; color: #555; }
+    .notice { background: #cba6f7; color: #1e1e2e; border-radius: 6px; padding: 0.75rem 1rem; margin-top: 1rem; }
+    .inactive-notice { background: #f38ba8; color: #1e1e2e; border-radius: 6px; padding: 0.75rem 1rem; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="avatar" th:text="${user.initials}">AB</div>
+
+    <h1 th:text="${user.name}">Full Name</h1>
+    <p th:text="${user.bio}">Short bio goes here.</p>
+
+    <span class="badge" th:classappend="${user.role == 'ADMIN'} ? 'badge-admin' : 'badge-user'" th:text="${user.role}">ROLE</span>
+    <span class="badge badge-premium" th:if="${user.premium}">⭐ Premium</span>
+
+    <div class="field" style="margin-top:1rem;">
+      <label>Email</label>
+      <span th:text="${user.email}">email@example.com</span>
+    </div>
+
+    <div class="field">
+      <label>Location</label>
+      <span th:text="${user.location}">City, Country</span>
+    </div>
+
+    <div class="field">
+      <label>Member since</label>
+      <span th:text="${user.joinedYear}">2020</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="section-title">Skills</p>
+    <span class="tag" th:each="skill : ${user.skills}" th:text="${skill}">Skill</span>
+  </div>
+
+  <div class="card">
+    <p class="section-title">Account Status</p>
+
+    <div th:if="${user.active}">
+      <p>✅ Account is <strong>active</strong>.</p>
+      <div class="notice" th:if="${user.premium}">
+        🎉 You have access to all premium features.
+      </div>
+    </div>
+
+    <div th:unless="${user.active}">
+      <div class="inactive-notice">
+        ⚠️ This account is currently <strong>inactive</strong>. Please contact support.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="section-title">Role Access</p>
+    <div th:switch="${user.role}">
+      <p th:case="'ADMIN'">🔑 Full administrative access granted.</p>
+      <p th:case="'MANAGER'">🗂️ Management-level access granted.</p>
+      <p th:case="*">👤 Standard user access granted.</p>
+    </div>
+  </div>
+
+</body>
+</html>

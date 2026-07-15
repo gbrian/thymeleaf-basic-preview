@@ -1,0 +1,62 @@
+{
+  "catalog": {
+    "title": "Spring Sale Catalog",
+    "description": "Hand-picked deals updated weekly. Prices include VAT.",
+    "products": [
+      {
+        "name": "Mechanical Keyboard Pro",
+        "category": "Electronics",
+        "description": "Tactile switches, RGB backlight, TKL layout.",
+        "price": 89.99,
+        "originalPrice": 129.99,
+        "stock": 14,
+        "featured": true
+      },
+      {
+        "name": "Ergonomic Mouse",
+        "category": "Electronics",
+        "description": "Vertical grip, 7 programmable buttons, USB-C.",
+        "price": 49.99,
+        "originalPrice": null,
+        "stock": 3,
+        "featured": false
+      },
+      {
+        "name": "USB-C Hub 7-in-1",
+        "category": "Accessories",
+        "description": "HDMI 4K, 3× USB-A, SD card reader, PD 100W.",
+        "price": 34.95,
+        "originalPrice": null,
+        "stock": 0,
+        "featured": false
+      },
+      {
+        "name": "Noise-Cancelling Headphones",
+        "category": "Audio",
+        "description": "40hr battery, foldable design, premium sound.",
+        "price": 199.00,
+        "originalPrice": 249.00,
+        "stock": 22,
+        "featured": true
+      },
+      {
+        "name": "Laptop Stand Aluminium",
+        "category": "Accessories",
+        "description": "Adjustable height, compatible with 10–17 inch laptops.",
+        "price": 27.50,
+        "originalPrice": null,
+        "stock": 5,
+        "featured": false
+      },
+      {
+        "name": "Webcam 1080p",
+        "category": "Electronics",
+        "description": "Auto-focus, built-in stereo mic, plug & play.",
+        "price": 59.00,
+        "originalPrice": 79.00,
+        "stock": 0,
+        "featured": false
+      }
+    ]
+  }
+}

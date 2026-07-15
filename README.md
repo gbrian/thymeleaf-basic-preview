@@ -1,4 +1,4 @@
-# 🌿 Thymeleaf Basic Preview
+# ![logo](assets/logo.png) Thymeleaf Basic Preview
 
 > A lightweight VSCode extension to preview Thymeleaf HTML templates during development — no server required.
 
