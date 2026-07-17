@@ -11,7 +11,7 @@
   "message_id": null,
   "status": "",
   "file_list": [
-    "/home/codx-junior-projects/w2fly/projects/thymeleaf-basic-preview-vscode/package.json"
+    "thymeleaf-basic-preview-vscode/package.json"
   ],
   "check_lists": [],
   "profiles": [
@@ -223,7 +223,7 @@
   "chat_index": 0,
   "url": "",
   "branch": "",
-  "file_path": "/home/codx-junior-projects/w2fly/projects/thymeleaf-basic-preview-vscode/.codx/tasks/Thymeleaf viewer extension/ToDo/package.cacf1446-270b-4b9a-ae82-c2469a89fc22.json",
+  "file_path": "thymeleaf-basic-preview-vscode/.codx/tasks/Thymeleaf viewer extension/ToDo/package.cacf1446-270b-4b9a-ae82-c2469a89fc22.json",
   "llm_model": "",
   "visibility": "",
   "remote_url": "",

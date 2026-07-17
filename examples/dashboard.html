@@ -34,6 +34,8 @@
     .no-alerts { color: #aaa; font-size: 0.9rem; }
     .progress-bar-wrap { background: #eee; border-radius: 6px; height: 10px; overflow: hidden; margin-top: 4px; }
     .progress-bar { height: 10px; border-radius: 6px; background: #89b4fa; }
+    .translation-methods { background: #f9f5ff; border: 1px dashed #cba6f7; padding: 1rem; margin-bottom: 1rem; font-size: 0.85rem; }
+    .translation-methods code { background: #fff; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
   </style>
 </head>
 <body>
@@ -41,16 +43,32 @@
   <div class="topbar">
     <h1 th:text="${app.name}">App Dashboard</h1>
     <span class="user-info">
-      Logged in as <strong th:text="${currentUser.name}">User</strong>
-      &mdash; <span th:text="${currentUser.role}">ROLE</span>
+      <!-- Method 1: Simple message interpolation with #{} -->
+      <span th:text="#{topbar.logged_in}">Logged in as</span>
+      <strong th:text="${currentUser.name}">User</strong>
+      &mdash;
+      <!-- Method 2: With fallback using ternary operator -->
+      <span th:text="${#messages.msg('topbar.role')} ?: 'ROLE'"></span>
+      <span th:text="${currentUser.role}"></span>
     </span>
   </div>
 
   <div class="main">
 
+    <!-- Translation Methods Documentation -->
+    <div class="section translation-methods">
+      <h3 style="margin-top: 0;">Translation Methods Demonstrated:</h3>
+      <p><strong>Method 1:</strong> <code>th:text="#{key}"</code> - Standard Thymeleaf message resolution</p>
+      <p><strong>Method 2:</strong> <code>${#messages.msg('key') ?: 'fallback'}</code> - Expression utility with fallback</p>
+      <p><strong>Method 3:</strong> <code>[[#{key}]]</code> - Inline message resolution</p>
+      <p><strong>Method 4:</strong> <code>th:utext="#{key}"</code> - Unescaped HTML content</p>
+      <p><strong>Method 5:</strong> <code>th:text="#{key(${param})}"></code> - Messages with parameters</p>
+    </div>
+
     <!-- KPI Cards -->
     <div class="kpi-grid">
       <div class="kpi" th:each="kpi : ${kpis}">
+        <!-- Method 1: Direct message key -->
         <div class="label" th:text="${kpi.label}">Metric</div>
         <div class="value" th:classappend="${kpi.trend}" th:text="${kpi.value}">0</div>
       </div>
@@ -58,15 +76,17 @@
 
     <!-- Recent Orders Table -->
     <div class="section">
-      <h2>Recent Orders</h2>
+      <!-- Method 3: Inline message resolution -->
+      <h2>[[#{section.recent_orders}]]</h2>
       <table>
         <thead>
           <tr>
-            <th>#</th>
-            <th>Order ID</th>
-            <th>Customer</th>
-            <th>Amount</th>
-            <th>Status</th>
+            <!-- Method 1: Simple message keys -->
+            <th th:text="#{table.header.id}"></th>
+            <th th:text="#{table.header.order_id}"></th>
+            <th th:text="#{table.header.customer}"></th>
+            <th th:text="#{table.header.amount}"></th>
+            <th th:text="#{table.header.status}"></th>
           </tr>
         </thead>
         <tbody>
@@ -74,13 +94,17 @@
             <td th:text="${stat.count}">1</td>
             <td th:text="${order.id}">ORD-000</td>
             <td th:text="${order.customer}">Customer Name</td>
-            <td th:text="'$' + ${order.amount}">$0.00</td>
+            <!-- Method 5: Message with parameters -->
             <td>
+              <span th:text="#{order.amount(${order.amount})}">$0.00</span>
+            </td>
+            <td>
+              <!-- Method 2: Message with fallback for dynamic status -->
               <span
                 class="status-pill"
                 th:classappend="${order.status == 'SUCCESS'} ? 'status-success' : (${order.status == 'PENDING'} ? 'status-pending' : 'status-failed')"
-                th:text="${order.status}"
-              >STATUS</span>
+                th:text="${#messages.msg('status.' + order.status.toLowerCase())} ?: ${order.status}"
+              ></span>
             </td>
           </tr>
         </tbody>
@@ -89,11 +113,13 @@
 
     <!-- Server Health -->
     <div class="section">
-      <h2>Server Health</h2>
+      <!-- Method 4: Unescaped HTML (if needed for rich content) -->
+      <h2 th:utext="#{section.server_health}">Server Health</h2>
       <div th:each="server : ${servers}" style="margin-bottom:1.25rem;">
         <div style="display:flex;justify-content:space-between;font-size:0.9rem;">
           <strong th:text="${server.name}">server-name</strong>
-          <span th:text="${server.load} + '% CPU'">0% CPU</span>
+          <!-- Method 5: Message with multiple parameters -->
+          <span th:text="#{server.cpu_usage(${server.load})}">0% CPU</span>
         </div>
         <div class="progress-bar-wrap">
           <div
@@ -107,14 +133,19 @@
 
     <!-- System Alerts -->
     <div class="section">
-      <h2>System Alerts</h2>
-      <div th:if="${alerts.size() == 0}" class="no-alerts">✅ No active alerts. All systems nominal.</div>
+      <!-- Method 1: Simple message -->
+      <h2 th:text="#{section.system_alerts}"></h2>
+      
+      <!-- Method 2: With fallback when list is empty -->
+      <div th:if="${alerts.size() == 0}" th:text="${#messages.msg('alert.no_alerts') ?: '✅ No active alerts. All systems nominal.'}"></div>
+      
       <div
         th:each="alert : ${alerts}"
         class="alert"
         th:classappend="${alert.level == 'warn'} ? 'warn' : (${alert.level == 'error'} ? 'error' : '')"
       >
-        <strong th:text="${alert.level.toUpperCase()}">INFO</strong> —
+        <!-- Method 1: Alert level translation -->
+        <strong th:text="#{${'alert.level.' + alert.level}}">INFO</strong> —
         <span th:text="${alert.message}">Alert message</span>
       </div>
     </div>

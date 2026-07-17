@@ -1,34 +1,84 @@
 {
   "app": {
-    "name": "Acme Operations Dashboard"
+    "name": "Analytics Dashboard"
   },
   "currentUser": {
-    "name": "Bob Steinberg",
-    "role": "MANAGER"
+    "name": "John Doe",
+    "role": "Admin"
   },
   "kpis": [
-    { "label": "Total Revenue",   "value": "$84,320", "trend": "up"      },
-    { "label": "Active Users",    "value": "1,204",   "trend": "up"      },
-    { "label": "Open Tickets",    "value": "37",      "trend": "down"    },
-    { "label": "Uptime (30d)",    "value": "99.97%",  "trend": "neutral" }
+    {
+      "label": "Total Revenue",
+      "value": "$245,680",
+      "trend": "up"
+    },
+    {
+      "label": "Active Users",
+      "value": "12,547",
+      "trend": "up"
+    },
+    {
+      "label": "Conversion Rate",
+      "value": "3.24%",
+      "trend": "neutral"
+    },
+    {
+      "label": "Bounce Rate",
+      "value": "42.1%",
+      "trend": "down"
+    }
   ],
   "orders": [
-    { "id": "ORD-8821", "customer": "Claire Dubois",   "amount": "320.00", "status": "SUCCESS" },
-    { "id": "ORD-8820", "customer": "Marco Rossi",     "amount": "85.50",  "status": "PENDING" },
-    { "id": "ORD-8819", "customer": "Yuki Tanaka",     "amount": "512.00", "status": "SUCCESS" },
-    { "id": "ORD-8818", "customer": "Hans Müller",     "amount": "47.00",  "status": "FAILED"  },
-    { "id": "ORD-8817", "customer": "Sofia Andersen",  "amount": "198.99", "status": "SUCCESS" },
-    { "id": "ORD-8816", "customer": "Liam O'Brien",    "amount": "63.20",  "status": "PENDING" }
+    {
+      "id": "ORD-001",
+      "customer": "Acme Corp",
+      "amount": 5420.50,
+      "status": "SUCCESS"
+    },
+    {
+      "id": "ORD-002",
+      "customer": "TechStart Inc",
+      "amount": 3250.00,
+      "status": "PENDING"
+    },
+    {
+      "id": "ORD-003",
+      "customer": "Global Solutions",
+      "amount": 8900.75,
+      "status": "SUCCESS"
+    },
+    {
+      "id": "ORD-004",
+      "customer": "Beta Enterprises",
+      "amount": 2100.00,
+      "status": "FAILED"
+    }
   ],
   "servers": [
-    { "name": "web-01",   "region": "EU-West",    "load": 23 },
-    { "name": "web-02",   "region": "EU-West",    "load": 61 },
-    { "name": "api-01",   "region": "US-East",    "load": 87 },
-    { "name": "worker-01","region": "AP-South",   "load": 44 }
+    {
+      "name": "server-01",
+      "load": 35,
+      "region": "US-East"
+    },
+    {
+      "name": "server-02",
+      "load": 62,
+      "region": "US-West"
+    },
+    {
+      "name": "server-03",
+      "load": 89,
+      "region": "EU-Central"
+    }
   ],
   "alerts": [
-    { "level": "warn",  "message": "api-01 CPU load exceeded 85% for more than 10 minutes." },
-    { "level": "error", "message": "worker-01 failed to process 3 jobs in the last hour."   },
-    { "level": "info",  "message": "Scheduled maintenance window on Saturday 02:00–04:00 UTC." }
+    {
+      "level": "warn",
+      "message": "Memory usage on server-03 is above 85%"
+    },
+    {
+      "level": "error",
+      "message": "Database connection pool exhausted on primary instance"
+    }
   ]
 }

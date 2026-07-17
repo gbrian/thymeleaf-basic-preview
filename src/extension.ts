@@ -6,257 +6,296 @@ import * as cp from 'child_process'
 let outputChannel: vscode.OutputChannel
 
 function getOutputChannel(): vscode.OutputChannel {
-  if (!outputChannel) {
-    outputChannel = vscode.window.createOutputChannel('Thymeleaf Preview')
-  }
-  return outputChannel
+	if (!outputChannel) {
+		outputChannel = vscode.window.createOutputChannel('Thymeleaf Preview')
+	}
+	return outputChannel
 }
 
 function log(message: string): void {
-  const channel = getOutputChannel()
-  const timestamp = new Date().toISOString()
-  channel.appendLine(`[${timestamp}] ${message}`)
+	const channel = getOutputChannel()
+	const timestamp = new Date().toISOString()
+	channel.appendLine(`[${timestamp}] ${message}`)
 }
 
 function logError(message: string, error?: unknown): void {
-  const channel = getOutputChannel()
-  const timestamp = new Date().toISOString()
-  channel.appendLine(`[${timestamp}] ❌ ERROR: ${message}`)
-  if (error instanceof Error) {
-    channel.appendLine(`[${timestamp}]    ${error.message}`)
-    if (error.stack) {
-      channel.appendLine(`[${timestamp}]    ${error.stack}`)
-    }
-  } else if (error !== undefined) {
-    channel.appendLine(`[${timestamp}]    ${String(error)}`)
-  }
-  channel.show(true)
+	const channel = getOutputChannel()
+	const timestamp = new Date().toISOString()
+	channel.appendLine(`[${timestamp}] ❌ ERROR: ${message}`)
+	if (error instanceof Error) {
+		channel.appendLine(`[${timestamp}]    ${error.message}`)
+		if (error.stack) {
+			channel.appendLine(`[${timestamp}]    ${error.stack}`)
+		}
+	} else if (error !== undefined) {
+		channel.appendLine(`[${timestamp}]    ${String(error)}`)
+	}
+	channel.show(true)
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  log('Thymeleaf Preview extension activated')
+	log('Thymeleaf Preview extension activated')
 
-  const command = vscode.commands.registerCommand(
-    'thymeleaf-preview.openPreview',
-    () => {
-      const editor = vscode.window.activeTextEditor
-      if (!editor) {
-        vscode.window.showErrorMessage('No active HTML file found.')
-        log('Command triggered but no active editor found')
-        return
-      }
+	const command = vscode.commands.registerCommand(
+		'thymeleaf-preview.openPreview',
+		(): void => {
+			const editor = vscode.window.activeTextEditor
+			if (!editor) {
+				vscode.window.showErrorMessage('No active HTML file found.')
+				log('Command triggered but no active editor found')
+				return
+			}
 
-      const htmlFilePath = editor.document.fileName
-      log(`Opening preview for: ${htmlFilePath}`)
+			const htmlFilePath = editor.document.fileName
+			log(`Opening preview for: ${htmlFilePath}`)
 
-      if (!htmlFilePath.endsWith('.html')) {
-        vscode.window.showErrorMessage('Active file is not an HTML file.')
-        log(`File rejected — not an HTML file: ${htmlFilePath}`)
-        return
-      }
+			if (!htmlFilePath.endsWith('.html')) {
+				vscode.window.showErrorMessage('Active file is not an HTML file.')
+				log(`File rejected — not an HTML file: ${htmlFilePath}`)
+				return
+			}
 
-      const basePath = htmlFilePath.replace(/\.html$/, '')
-      const jsonFilePath = `${basePath}.json`
-      const propertiesFilePath = `${basePath}.properties`
+			const basePath = htmlFilePath.replace(/\.html$/, '')
+			const jsonFilePath = `${basePath}.json`
+			const propertiesFilePath = `${basePath}.properties`
 
-      log(`Resolved paths — JSON: ${jsonFilePath} | Properties: ${propertiesFilePath}`)
+			log(`Resolved paths — JSON: ${jsonFilePath} | Properties: ${propertiesFilePath}`)
 
-      const panel = vscode.window.createWebviewPanel(
-        'thymeleafPreview',
-        `Preview: ${path.basename(htmlFilePath)}`,
-        vscode.ViewColumn.Beside,
-        {
-          enableScripts: false,
-          localResourceRoots: []
-        }
-      )
+			const panel = vscode.window.createWebviewPanel(
+				'thymeleafPreview',
+				`Preview: ${path.basename(htmlFilePath)}`,
+				vscode.ViewColumn.Beside,
+				{
+					enableScripts: false,
+					localResourceRoots: []
+				}
+			)
 
-      const jarPath = context.asAbsolutePath(path.join('bin', 'thymeleaf-cli.jar'))
-      log(`JAR path resolved: ${jarPath}`)
+			const jarPath = context.asAbsolutePath(path.join('bin', 'thymeleaf-cli.jar'))
+			log(`JAR path resolved: ${jarPath}`)
 
-      const renderPreview = (): void => {
-        log(`Rendering preview for: ${path.basename(htmlFilePath)}`)
+			const renderPreview = (): void => {
+				log(`Rendering preview for: ${path.basename(htmlFilePath)}`)
 
-        let data: Record<string, unknown> = {}
+				let data: Record<string, unknown> = {}
 
-        if (fs.existsSync(jsonFilePath)) {
-          log(`JSON data file found: ${jsonFilePath}`)
-          try {
-            const raw = fs.readFileSync(jsonFilePath, 'utf-8')
-            data = JSON.parse(raw)
-            log(`JSON parsed successfully — keys: ${Object.keys(data).join(', ')}`)
-          } catch (parseError) {
-            logError(`Could not parse JSON file: ${jsonFilePath}`, parseError)
-            vscode.window.showWarningMessage(
-              `Could not parse JSON file: ${jsonFilePath}. Using empty data.`
-            )
-          }
-        } else {
-          log(`No JSON data file found at: ${jsonFilePath} — using empty data`)
-        }
+				if (fs.existsSync(jsonFilePath)) {
+					log(`JSON data file found: ${jsonFilePath}`)
+					try {
+						const raw = fs.readFileSync(jsonFilePath, 'utf-8')
+						data = JSON.parse(raw)
+						log(`JSON parsed successfully — keys: ${Object.keys(data).join(', ')}`)
+					} catch (parseError) {
+						logError(`Could not parse JSON file: ${jsonFilePath}`, parseError)
+						vscode.window.showWarningMessage(
+							`Could not parse JSON file: ${jsonFilePath}. Using empty data.`
+						)
+					}
+				} else {
+					log(`No JSON data file found at: ${jsonFilePath} — using empty data`)
+				}
 
-        const jarExists = fs.existsSync(jarPath)
-        const jsonExists = fs.existsSync(jsonFilePath)
+				const jarExists = fs.existsSync(jarPath)
+				const jsonExists = fs.existsSync(jsonFilePath)
 
-        log(`JAR exists: ${jarExists} | JSON exists: ${jsonExists}`)
+				log(`JAR exists: ${jarExists} | JSON exists: ${jsonExists}`)
 
-        if (jarExists && jsonExists) {
-          log('Using Java CLI engine (Thymeleaf)')
-          renderViaJavaCli(panel, htmlFilePath, jsonFilePath, jarPath)
-        } else {
-          if (!jarExists) {
-            log('JAR not found — falling back to JS processor')
-          }
-          if (!jsonExists) {
-            log('JSON file not found — falling back to JS processor')
-          }
-          renderViaJsProcessor(panel, htmlFilePath, jsonFilePath, propertiesFilePath, data)
-        }
-      }
+				if (jarExists && jsonExists) {
+					log('Using Java CLI engine (Thymeleaf)')
+					renderViaJavaCli(panel, htmlFilePath, jsonFilePath, propertiesFilePath, jarPath)
+				} else {
+					if (!jarExists) {
+						log('JAR not found — falling back to JS processor')
+					}
+					if (!jsonExists) {
+						log('JSON file not found — falling back to JS processor')
+					}
+					renderViaJsProcessor(panel, htmlFilePath, jsonFilePath, propertiesFilePath, data)
+				}
+			}
 
-      renderPreview()
+			renderPreview()
 
-      const fsWatcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(
-          vscode.Uri.file(path.dirname(htmlFilePath)),
-          `${path.basename(basePath)}.{html,json,properties}`
-        ),
-        false,
-        false,
-        true
-      )
+			const fsWatcher = vscode.workspace.createFileSystemWatcher(
+				new vscode.RelativePattern(
+					vscode.Uri.file(path.dirname(htmlFilePath)),
+					`${path.basename(basePath)}.{html,json,properties}`
+				),
+				false,
+				false,
+				true
+			)
 
-      fsWatcher.onDidChange((uri: vscode.Uri): void => {
-        log(`File changed (external): ${uri.fsPath}`)
-        renderPreview()
-      })
+			fsWatcher.onDidChange((uri: vscode.Uri): void => {
+				log(`File changed (external): ${uri.fsPath}`)
+				renderPreview()
+			})
 
-      fsWatcher.onDidCreate((uri: vscode.Uri): void => {
-        log(`File created (external): ${uri.fsPath}`)
-        renderPreview()
-      })
+			fsWatcher.onDidCreate((uri: vscode.Uri): void => {
+				log(`File created (external): ${uri.fsPath}`)
+				renderPreview()
+			})
 
-      const onDidChangeDoc = vscode.workspace.onDidChangeTextDocument(
-        (e: vscode.TextDocumentChangeEvent) => {
-          if (e.document.fileName === htmlFilePath) {
-            log(`Document changed in editor: ${path.basename(htmlFilePath)}`)
-            renderPreview()
-          }
-        }
-      )
+			const onDidChangeDoc = vscode.workspace.onDidChangeTextDocument(
+				(e: vscode.TextDocumentChangeEvent): void => {
+					if (e.document.fileName === htmlFilePath) {
+						log(`Document changed in editor: ${path.basename(htmlFilePath)}`)
+						renderPreview()
+					}
+				}
+			)
 
-      panel.onDidDispose(() => {
-        log(`Preview panel closed for: ${path.basename(htmlFilePath)}`)
-        fsWatcher.dispose()
-        onDidChangeDoc.dispose()
-      })
-    }
-  )
+			panel.onDidDispose((): void => {
+				log(`Preview panel closed for: ${path.basename(htmlFilePath)}`)
+				fsWatcher.dispose()
+				onDidChangeDoc.dispose()
+			})
+		}
+	)
 
-  context.subscriptions.push(command)
+	context.subscriptions.push(command)
 }
 
 export function deactivate(): void {
-  log('Thymeleaf Preview extension deactivated')
+	log('Thymeleaf Preview extension deactivated')
 }
 
-// ---------------------------------------------------------------------------
-// Render via Java CLI — uses the real Thymeleaf engine
-// ---------------------------------------------------------------------------
 function renderViaJavaCli(
-  panel: vscode.WebviewPanel,
-  htmlFilePath: string,
-  jsonFilePath: string,
-  jarPath: string
+	panel: vscode.WebviewPanel,
+	htmlFilePath: string,
+	jsonFilePath: string,
+	propertiesFilePath: string,
+	jarPath: string
 ): void {
-  const args = [
-    '-jar', jarPath,
-    '--template-path', htmlFilePath,
-    '--data-path', jsonFilePath
-  ]
+	const args: string[] = [
+		'-jar', jarPath,
+		'--template-path', htmlFilePath,
+		'--data-path', jsonFilePath
+	]
 
-  log(`Spawning Java process — args: ${args.join(' ')}`)
+	if (fs.existsSync(propertiesFilePath)) {
+		log(`Messages file found at: ${propertiesFilePath}`)
+		args.push('--messages-path', propertiesFilePath)
+	} else {
+		log(`No messages file found at: ${propertiesFilePath}`)
+	}
 
-  cp.execFile('java', args, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }, (
-    err: cp.ExecFileException | null,
-    stdout: string,
-    stderr: string
-  ): void => {
-    if (err) {
-      const errorMessage = stderr || err.message
-      logError(`Java CLI process failed for: ${path.basename(htmlFilePath)}`, errorMessage)
-      vscode.window.showErrorMessage(`Thymeleaf CLI error: ${errorMessage}`)
-      panel.webview.html = wrapWithToolbar(
-        buildErrorPanel('Java Processing Failed', errorMessage, htmlFilePath, jsonFilePath),
-        path.basename(htmlFilePath),
-        'java'
-      )
-      return
-    }
+	log(`Spawning Java process — args: ${args.join(' ')}`)
 
-    if (stderr) {
-      log(`Java CLI stderr (non-fatal): ${stderr}`)
-    }
+	cp.execFile('java', args, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }, (
+		err: cp.ExecFileException | null,
+		stdout: string,
+		stderr: string
+	): void => {
+		if (err) {
+			const fullError = combinedErrorOutput(stderr, stdout)
+			const displayError = extractErrorDetails(fullError)
+			logError(`Java CLI process failed for: ${path.basename(htmlFilePath)}`, fullError)
+			vscode.window.showErrorMessage(`Thymeleaf CLI error: Check output channel for details`)
+			panel.webview.html = wrapWithToolbar(
+				buildErrorPanel('Java Processing Failed', displayError, htmlFilePath, jsonFilePath),
+				path.basename(htmlFilePath),
+				'java'
+			)
+			return
+		}
 
-    log(`Java CLI completed successfully — output length: ${stdout.length} chars`)
-    panel.webview.html = wrapWithToolbar(stdout, path.basename(htmlFilePath), 'java')
-  })
+		if (stderr) {
+			log(`Java CLI stderr (non-fatal): ${stderr}`)
+		}
+
+		log(`Java CLI completed successfully — output length: ${stdout.length} chars`)
+		panel.webview.html = wrapWithToolbar(stdout, path.basename(htmlFilePath), 'java')
+	})
 }
 
-// ---------------------------------------------------------------------------
-// Render via built-in JS processor — fallback when JAR is not available
-// ---------------------------------------------------------------------------
+function combinedErrorOutput(stderr: string, stdout: string): string {
+	if (stderr && stdout) {
+		return `${stderr}\n\n${stdout}`
+	}
+	return stderr || stdout
+}
+
+function extractErrorDetails(fullError: string): string {
+	const lines = fullError.split('\n').filter((line: string): boolean => line.trim().length > 0)
+
+	const errorDetailsStart = lines.findIndex(
+		(line: string): boolean => line.includes('ERROR DETAILS:') || line.includes('Error')
+	)
+
+	if (errorDetailsStart !== -1) {
+		return lines.slice(errorDetailsStart).join('\n')
+	}
+
+	const relevantLines = lines.filter((line: string): boolean =>
+		line.includes('Error') ||
+		line.includes('Exception') ||
+		line.includes('Template') ||
+		line.includes('parsing') ||
+		line.includes('Cause') ||
+		line.includes('Type:')
+	)
+
+	if (relevantLines.length > 0) {
+		return relevantLines.join('\n')
+	}
+
+	return lines.slice(-15).join('\n')
+}
+
 function renderViaJsProcessor(
-  panel: vscode.WebviewPanel,
-  htmlFilePath: string,
-  jsonFilePath: string,
-  propertiesFilePath: string,
-  data: Record<string, unknown>
+	panel: vscode.WebviewPanel,
+	htmlFilePath: string,
+	jsonFilePath: string,
+	propertiesFilePath: string,
+	data: Record<string, unknown>
 ): void {
-  log('Starting JS fallback processor')
+	log('Starting JS fallback processor')
 
-  const i18n = loadProperties(propertiesFilePath)
-  log(`i18n keys loaded: ${Object.keys(i18n).length}`)
+	const i18n = loadProperties(propertiesFilePath)
+	log(`i18n keys loaded: ${Object.keys(i18n).length}`)
 
-  const openDoc = vscode.workspace.textDocuments.find(
-    (d) => d.fileName === htmlFilePath
-  )
+	const openDoc = vscode.workspace.textDocuments.find(
+		(d: vscode.TextDocument): boolean => d.fileName === htmlFilePath
+	)
 
-  const rawHtml = openDoc
-    ? openDoc.getText()
-    : fs.existsSync(htmlFilePath)
-      ? fs.readFileSync(htmlFilePath, 'utf-8')
-      : ''
+	const rawHtml = openDoc
+		? openDoc.getText()
+		: fs.existsSync(htmlFilePath)
+			? fs.readFileSync(htmlFilePath, 'utf-8')
+			: ''
 
-  log(`HTML source: ${openDoc ? 'editor buffer' : 'file on disk'} — length: ${rawHtml.length} chars`)
+	log(`HTML source: ${openDoc ? 'editor buffer' : 'file on disk'} — length: ${rawHtml.length} chars`)
 
-  try {
-    const processedHtml = processThymeleaf(rawHtml, data, i18n)
-    log(`JS processing complete — output length: ${processedHtml.length} chars`)
-    panel.webview.html = wrapWithToolbar(processedHtml, path.basename(htmlFilePath), 'js')
-  } catch (processingError) {
-    logError(`JS processor failed for: ${path.basename(htmlFilePath)}`, processingError)
-    const errorMessage = processingError instanceof Error
-      ? processingError.message
-      : String(processingError)
-    panel.webview.html = wrapWithToolbar(
-      buildErrorPanel('JS Processing Failed', errorMessage, htmlFilePath, jsonFilePath),
-      path.basename(htmlFilePath),
-      'js'
-    )
-  }
+	try {
+		const processedHtml = processThymeleaf(rawHtml, data, i18n)
+		log(`JS processing complete — output length: ${processedHtml.length} chars`)
+		panel.webview.html = wrapWithToolbar(processedHtml, path.basename(htmlFilePath), 'js')
+	} catch (processingError) {
+		logError(`JS processor failed for: ${path.basename(htmlFilePath)}`, processingError)
+		const errorMessage = processingError instanceof Error
+			? processingError.message
+			: String(processingError)
+		panel.webview.html = wrapWithToolbar(
+			buildErrorPanel('JS Processing Failed', errorMessage, htmlFilePath, jsonFilePath),
+			path.basename(htmlFilePath),
+			'js'
+		)
+	}
 }
 
-// ---------------------------------------------------------------------------
-// Build an error panel HTML block to show inside the preview
-// ---------------------------------------------------------------------------
 function buildErrorPanel(
-  title: string,
-  errorMessage: string,
-  htmlFilePath: string,
-  jsonFilePath: string
+	title: string,
+	errorMessage: string,
+	htmlFilePath: string,
+	jsonFilePath: string
 ): string {
-  return `
+	const formattedError = errorMessage
+		.split('\n')
+		.map((line: string): string => escapeHtml(line))
+		.join('\n')
+
+	return `
     <div style="
       font-family: monospace;
       padding: 2em;
@@ -268,7 +307,8 @@ function buildErrorPanel(
       <h2 style="color:#f38ba8;margin-top:0;">⚠️ ${escapeHtml(title)}</h2>
       <p style="color:#a6adc8;margin-bottom:1.5em;">
         An error occurred while processing the Thymeleaf template.
-        Check the <strong style="color:#89b4fa;">Thymeleaf Preview</strong> output channel for full details.
+        <br/>
+        <strong style="color:#89b4fa;">👉 Check the <strong>Thymeleaf Preview</strong> output channel for the complete stack trace.</strong>
       </p>
       <div style="
         background:#181825;
@@ -279,398 +319,393 @@ function buildErrorPanel(
         white-space:pre-wrap;
         word-break:break-word;
         line-height:1.6;
-      ">${escapeHtml(errorMessage)}</div>
+        max-height: 500px;
+        overflow-y: auto;
+        font-size: 11px;
+      "><strong>Error Details:</strong>
+${formattedError}</div>
       <div style="margin-top:1.5em;color:#6c7086;font-size:0.85em;">
         <div><span style="color:#a6adc8;">Template:</span> ${escapeHtml(htmlFilePath)}</div>
         <div><span style="color:#a6adc8;">Data:</span>     ${escapeHtml(jsonFilePath)}</div>
+      </div>
+      <div style="margin-top:2em;padding-top:1.5em;border-top:1px solid #45475a;color:#89b4fa;font-size:0.9em;">
+        <strong>Troubleshooting Tips:</strong>
+        <ul style="margin:0.5em 0;">
+          <li>Verify JSON syntax is valid using a JSON validator</li>
+          <li>Check template variable names match data keys exactly</li>
+          <li>Ensure both template and data files are readable</li>
+          <li>Review the full output channel logs for stack trace details</li>
+          <li>Confirm Thymeleaf syntax follows the specification</li>
+        </ul>
       </div>
     </div>
   `
 }
 
-// ---------------------------------------------------------------------------
-// Properties loader
-// ---------------------------------------------------------------------------
 function loadProperties(filePath: string): Record<string, string> {
-  const result: Record<string, string> = {}
-  if (!fs.existsSync(filePath)) {
-    log(`No properties file found at: ${filePath}`)
-    return result
-  }
+	const result: Record<string, string> = {}
+	if (!fs.existsSync(filePath)) {
+		log(`No properties file found at: ${filePath}`)
+		return result
+	}
 
-  log(`Loading properties from: ${filePath}`)
-  const lines = fs.readFileSync(filePath, 'utf-8').split('\n')
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) {
-      continue
-    }
-    const eqIndex = trimmed.indexOf('=')
-    if (eqIndex === -1) {
-      continue
-    }
-    const key = trimmed.substring(0, eqIndex).trim()
-    const value = trimmed.substring(eqIndex + 1).trim()
-    result[key] = value
-  }
+	log(`Loading properties from: ${filePath}`)
+	const lines = fs.readFileSync(filePath, 'utf-8').split('\n')
+	for (const line of lines) {
+		const trimmed = line.trim()
+		if (!trimmed || trimmed.startsWith('#')) {
+			continue
+		}
+		const eqIndex = trimmed.indexOf('=')
+		if (eqIndex === -1) {
+			continue
+		}
+		const key = trimmed.substring(0, eqIndex).trim()
+		const value = trimmed.substring(eqIndex + 1).trim()
+		result[key] = value
+	}
 
-  return result
+	return result
 }
 
-// ---------------------------------------------------------------------------
-// Core Thymeleaf processor (JS fallback)
-// ---------------------------------------------------------------------------
 function processThymeleaf(
-  html: string,
-  data: Record<string, unknown>,
-  i18n: Record<string, string>
+	html: string,
+	data: Record<string, unknown>,
+	i18n: Record<string, string>
 ): string {
-  html = html.replace(/\s*xmlns:th="[^"]*"/g, '')
-  html = processEachLoops(html, data, i18n)
-  html = html.replace(
-    /(<[^>]+)\s+th:text="([^"]*)"([^>]*>)([^<]*)/g,
-    (_match: string, openTagStart: string, thExpr: string, openTagEnd: string, _originalContent: string) => {
-      const resolved = resolveExpression(thExpr, data, i18n)
-      return `${openTagStart}${openTagEnd}${escapeHtml(resolved)}`
-    }
-  )
-  html = processClassAppend(html, data, i18n)
-  html = html.replace(/\$\{([^}]+)\}/g, (_match: string, varName: string) => {
-    return escapeHtml(String(resolveVar(varName.trim(), data, i18n)))
-  })
-  html = html.replace(/#\{([^}]+)\}/g, (_match: string, key: string) => {
-    return escapeHtml(i18n[key.trim()] ?? key.trim())
-  })
-  return html
+	html = html.replace(/\s*xmlns:th="[^"]*"/g, '')
+	html = processEachLoops(html, data, i18n)
+	html = html.replace(
+		/(<[^>]+)\s+th:text="([^"]*)"([^>]*>)([^<]*)/g,
+		(match: string, openTagStart: string, thExpr: string, openTagEnd: string, originalContent: string): string => {
+			const resolved = resolveExpression(thExpr, data, i18n)
+			return `${openTagStart}${openTagEnd}${escapeHtml(resolved)}`
+		}
+	)
+	html = processClassAppend(html, data, i18n)
+	html = html.replace(/\$\{([^}]+)\}/g, (match: string, varName: string): string => {
+		return escapeHtml(String(resolveVar(varName.trim(), data, i18n)))
+	})
+	html = html.replace(/#\{([^}]+)\}/g, (match: string, key: string): string => {
+		return escapeHtml(i18n[key.trim()] ?? key.trim())
+	})
+	return html
 }
 
-// ---------------------------------------------------------------------------
-// th:each loop processor
-// ---------------------------------------------------------------------------
 function processEachLoops(
-  html: string,
-  data: Record<string, unknown>,
-  i18n: Record<string, string>
+	html: string,
+	data: Record<string, unknown>,
+	i18n: Record<string, string>
 ): string {
-  const eachTagPattern = /<([a-zA-Z][a-zA-Z0-9]*)((?:[^>](?!th:each))*?)\s+th:each="([^"]+)"((?:[^>])*?)>([\s\S]*?)<\/\1>/g
+	const eachTagPattern = /<([a-zA-Z][a-zA-Z0-9]*)((?:[^>](?!th:each))*?)\s+th:each="([^"]+)"(?:[^>]*?)>([\s\S]*?)<\/\1>/g
 
-  return html.replace(
-    eachTagPattern,
-    (
-      _match: string,
-      tagName: string,
-      attrsBefore: string,
-      eachExpr: string,
-      attrsAfter: string,
-      innerContent: string
-    ): string => {
-      const eachMatch = eachExpr.trim().match(/^(\w+)(?:\s*,\s*(\w+))?\s*:\s*\$\{([^}]+)\}$/)
-      if (!eachMatch) {
-        return _match
-      }
+	return html.replace(
+		eachTagPattern,
+		(
+			match: string,
+			tagName: string,
+			attrsBefore: string,
+			eachExpr: string,
+			attrsAfter: string,
+			innerContent: string
+		): string => {
+			const eachMatch = eachExpr.trim().match(/^(\w+)(?:\s*,\s*(\w+))?\s*:\s*\$\{([^}]+)\}$/)
+			if (!eachMatch) {
+				return match
+			}
 
-      const iterVar = eachMatch[1]
-      const statusVar = eachMatch[2] ?? null
-      const listPath = eachMatch[3].trim()
-      const listValue = resolveVar(listPath, data, i18n)
+			const iterVar = eachMatch[1]
+			const statusVar = eachMatch[2] ?? null
+			const listPath = eachMatch[3].trim()
+			const listValue = resolveVar(listPath, data, i18n)
 
-      if (!Array.isArray(listValue)) {
-        return `<${tagName}${attrsBefore}${attrsAfter}>${innerContent}</${tagName}>`
-      }
+			if (!Array.isArray(listValue)) {
+				return `<${tagName}${attrsBefore}${attrsAfter}>${innerContent}</${tagName}>`
+			}
 
-      return listValue
-        .map((item: unknown, index: number): string => {
-          const iterStatus: Record<string, unknown> = {
-            index,
-            count: index + 1,
-            size: listValue.length,
-            current: item,
-            even: index % 2 === 0,
-            odd: index % 2 !== 0,
-            first: index === 0,
-            last: index === listValue.length - 1
-          }
+			return listValue
+				.map((item: unknown, index: number): string => {
+					const iterStatus: Record<string, unknown> = {
+						index,
+						count: index + 1,
+						size: listValue.length,
+						current: item,
+						even: index % 2 === 0,
+						odd: index % 2 !== 0,
+						first: index === 0,
+						last: index === listValue.length - 1
+					}
 
-          const scopedData: Record<string, unknown> = {
-            ...data,
-            [iterVar]: item,
-            ...(statusVar ? { [statusVar]: iterStatus } : {})
-          }
+					const scopedData: Record<string, unknown> = {
+						...data,
+						[iterVar]: item,
+						...(statusVar ? { [statusVar]: iterStatus } : {})
+					}
 
-          const processedInner = processThymeleafScoped(innerContent, scopedData, i18n)
-          return `<${tagName}${attrsBefore}${attrsAfter}>${processedInner}</${tagName}>`
-        })
-        .join('\n')
-    }
-  )
+					const processedInner = processThymeleafScoped(innerContent, scopedData, i18n)
+					return `<${tagName}${attrsBefore}${attrsAfter}>${processedInner}</${tagName}>`
+				})
+				.join('\n')
+		}
+	)
 }
 
-// ---------------------------------------------------------------------------
-// Scoped Thymeleaf processor — used inside th:each iterations
-// ---------------------------------------------------------------------------
 function processThymeleafScoped(
-  html: string,
-  data: Record<string, unknown>,
-  i18n: Record<string, string>
+	html: string,
+	data: Record<string, unknown>,
+	i18n: Record<string, string>
 ): string {
-  html = html.replace(
-    /(<[^>]+)\s+th:text="([^"]*)"([^>]*>)([^<]*)/g,
-    (_match: string, openTagStart: string, thExpr: string, openTagEnd: string, _originalContent: string): string => {
-      const resolved = resolveExpression(thExpr, data, i18n)
-      return `${openTagStart}${openTagEnd}${escapeHtml(resolved)}`
-    }
-  )
-  html = processClassAppend(html, data, i18n)
-  html = html.replace(/\$\{([^}]+)\}/g, (_match: string, varName: string): string => {
-    return escapeHtml(String(resolveVar(varName.trim(), data, i18n)))
-  })
-  html = html.replace(/#\{([^}]+)\}/g, (_match: string, key: string): string => {
-    return escapeHtml(i18n[key.trim()] ?? key.trim())
-  })
-  return html
+	html = html.replace(
+		/(<[^>]+)\s+th:text="([^"]*)"([^>]*>)([^<]*)/g,
+		(match: string, openTagStart: string, thExpr: string, openTagEnd: string, originalContent: string): string => {
+			const resolved = resolveExpression(thExpr, data, i18n)
+			return `${openTagStart}${openTagEnd}${escapeHtml(resolved)}`
+		}
+	)
+	html = processClassAppend(html, data, i18n)
+	html = html.replace(/\$\{([^}]+)\}/g, (match: string, varName: string): string => {
+		return escapeHtml(String(resolveVar(varName.trim(), data, i18n)))
+	})
+	html = html.replace(/#\{([^}]+)\}/g, (match: string, key: string): string => {
+		return escapeHtml(i18n[key.trim()] ?? key.trim())
+	})
+	return html
 }
 
-// ---------------------------------------------------------------------------
-// th:classappend processor
-// ---------------------------------------------------------------------------
 function processClassAppend(
-  html: string,
-  data: Record<string, unknown>,
-  i18n: Record<string, string>
+	html: string,
+	data: Record<string, unknown>,
+	i18n: Record<string, string>
 ): string {
-  return html.replace(
-    /(<[a-zA-Z][a-zA-Z0-9]*(?:[^>]*?))(\s+class="([^"]*)")?((?:[^>]*?)\s+th:classappend="([^"]*)")((?:[^>]*?)>)/g,
-    (
-      _match: string,
-      tagStart: string,
-      existingClassAttr: string,
-      existingClass: string,
-      _thClassAppendAttr: string,
-      appendExpr: string,
-      tagEnd: string
-    ): string => {
-      const appended = resolveExpression(appendExpr, data, i18n)
-      const base = existingClass ? existingClass.trim() : ''
-      const newClass = base ? `${base} ${appended}` : appended
-      if (existingClassAttr) {
-        return `${tagStart} class="${newClass}"${tagEnd}`
-      }
-      return `${tagStart} class="${newClass}"${tagEnd}`
-    }
-  )
+	return html.replace(
+		/(<[a-zA-Z][a-zA-Z0-9]*(?:[^>]*?))(\s+class="([^"]*)")?((?:[^>]*?)\s+th:classappend="([^"]*)")((?:[^>]*?)>)/g,
+		(
+			match: string,
+			tagStart: string,
+			existingClassAttr: string,
+			existingClass: string,
+			thClassAppendAttr: string,
+			appendExpr: string,
+			tagEnd: string
+		): string => {
+			const appended = resolveExpression(appendExpr, data, i18n)
+			const base = existingClass ? existingClass.trim() : ''
+			const newClass = base ? `${base} ${appended}` : appended
+			if (existingClassAttr) {
+				return `${tagStart} class="${newClass}"${tagEnd}`
+			}
+			return `${tagStart} class="${newClass}"${tagEnd}`
+		}
+	)
 }
 
-// ---------------------------------------------------------------------------
-// Resolve a #messages.msg(...) call
-// ---------------------------------------------------------------------------
 function resolveMessagesMsg(
-  argsExpr: string,
-  data: Record<string, unknown>,
-  i18n: Record<string, string>
+	argsExpr: string,
+	data: Record<string, unknown>,
+	i18n: Record<string, string>
 ): string {
-  const key = resolveMessagesMsgKey(argsExpr.trim(), data)
-  return i18n[key] ?? key
+	const key = resolveMessagesMsgKey(argsExpr.trim(), data)
+	return i18n[key] ?? key
 }
 
 function resolveMessagesMsgKey(
-  expr: string,
-  data: Record<string, unknown>
+	expr: string,
+	data: Record<string, unknown>
 ): string {
-  const parts = splitConcatExpression(expr)
-  return parts
-    .map((part: string): string => {
-      part = part.trim()
-      if (part.startsWith("'") && part.endsWith("'")) {
-        return part.slice(1, -1)
-      }
-      const vMatch = part.match(/^\$\{([^}]+)\}$/)
-      if (vMatch) {
-        return String(resolveVar(vMatch[1].trim(), data, {}))
-      }
-      if (part.length > 0) {
-        return String(resolveVar(part, data, {}))
-      }
-      return part
-    })
-    .join('')
+	const parts = splitConcatExpression(expr)
+	return parts
+		.map((part: string): string => {
+			part = part.trim()
+			if (part.startsWith("'") && part.endsWith("'")) {
+				return part.slice(1, -1)
+			}
+			const vMatch = part.match(/^\$\{([^}]+)\}$/)
+			if (vMatch) {
+				return String(resolveVar(vMatch[1].trim(), data, {}))
+			}
+			if (part.length > 0) {
+				return String(resolveVar(part, data, {}))
+			}
+			return part
+		})
+		.join('')
 }
 
-// ---------------------------------------------------------------------------
-// Expression resolver
-// ---------------------------------------------------------------------------
 function resolveExpression(
-  expr: string,
-  data: Record<string, unknown>,
-  i18n: Record<string, string>
+	expr: string,
+	data: Record<string, unknown>,
+	i18n: Record<string, string>
 ): string {
-  expr = expr.trim()
+	expr = expr.trim()
 
-  const i18nMatch = expr.match(/^#\{([^}]+)\}$/)
-  if (i18nMatch) {
-    const key = i18nMatch[1]
-    return i18n[key] ?? key
-  }
+	const i18nMatch = expr.match(/^#\{([^}]+)\}$/)
+	if (i18nMatch) {
+		const key = i18nMatch[1]
+		return i18n[key] ?? key
+	}
 
-  const msgMatch = expr.match(/^\$\{#messages\.msg\(([^)]+)\)\}$/)
-  if (msgMatch) {
-    return resolveMessagesMsg(msgMatch[1], data, i18n)
-  }
+	const msgMatch = expr.match(/^\$\{#messages\.msg\(([^)]+)\)\}$/)
+	if (msgMatch) {
+		return resolveMessagesMsg(msgMatch[1], data, i18n)
+	}
 
-  const varMatch = expr.match(/^\$\{([^}]+)\}$/)
-  if (varMatch) {
-    return String(resolveVar(varMatch[1].trim(), data, i18n))
-  }
+	const varMatch = expr.match(/^\$\{([^}]+)\}$/)
+	if (varMatch) {
+		return String(resolveVar(varMatch[1].trim(), data, i18n))
+	}
 
-  if (expr.startsWith('|') && expr.endsWith('|')) {
-    const inner = expr.slice(1, -1)
-    return inner.replace(/\$\{([^}]+)\}/g, (_m: string, v: string): string =>
-      String(resolveVar(v.trim(), data, i18n))
-    )
-  }
+	if (expr.startsWith('|') && expr.endsWith('|')) {
+		const inner = expr.slice(1, -1)
+		return inner.replace(/\$\{([^}]+)\}/g, (m: string, v: string): string =>
+			String(resolveVar(v.trim(), data, i18n))
+		)
+	}
 
-  const parts = splitConcatExpression(expr)
-  return parts
-    .map((part: string): string => {
-      part = part.trim()
-      if (part.startsWith("'") && part.endsWith("'")) {
-        const inner = part.slice(1, -1)
-        return inner.replace(/\$\{([^}]+)\}/g, (_m: string, v: string): string =>
-          String(resolveVar(v.trim(), data, i18n))
-        )
-      }
-      const vMatch = part.match(/^\$\{([^}]+)\}$/)
-      if (vMatch) {
-        return String(resolveVar(vMatch[1].trim(), data, i18n))
-      }
-      const iMatch = part.match(/^#\{([^}]+)\}$/)
-      if (iMatch) {
-        return i18n[iMatch[1]] ?? iMatch[1]
-      }
-      return part
-    })
-    .join('')
+	const parts = splitConcatExpression(expr)
+	return parts
+		.map((part: string): string => {
+			part = part.trim()
+			if (part.startsWith("'") && part.endsWith("'")) {
+				const inner = part.slice(1, -1)
+				return inner.replace(/\$\{([^}]+)\}/g, (m: string, v: string): string =>
+					String(resolveVar(v.trim(), data, i18n))
+				)
+			}
+			const vMatch = part.match(/^\$\{([^}]+)\}$/)
+			if (vMatch) {
+				return String(resolveVar(vMatch[1].trim(), data, i18n))
+			}
+			const iMatch = part.match(/^#\{([^}]+)\}$/)
+			if (iMatch) {
+				return i18n[iMatch[1]] ?? iMatch[1]
+			}
+			return part
+		})
+		.join('')
 }
 
-// ---------------------------------------------------------------------------
-// Split a Thymeleaf concatenation expression on `+`
-// ---------------------------------------------------------------------------
 function splitConcatExpression(expr: string): string[] {
-  const parts: string[] = []
-  let current = ''
-  let i = 0
+	const parts: string[] = []
+	let current = ''
+	let i = 0
 
-  while (i < expr.length) {
-    const ch = expr[i]
+	while (i < expr.length) {
+		const ch = expr[i]
 
-    if (ch === "'") {
-      current += ch
-      i++
-      while (i < expr.length && expr[i] !== "'") {
-        current += expr[i]
-        i++
-      }
-      if (i < expr.length) {
-        current += expr[i]
-        i++
-      }
-    } else if (ch === '$' && expr[i + 1] === '{') {
-      current += ch
-      i++
-      while (i < expr.length && expr[i] !== '}') {
-        current += expr[i]
-        i++
-      }
-      if (i < expr.length) {
-        current += expr[i]
-        i++
-      }
-    } else if (ch === '+') {
-      parts.push(current)
-      current = ''
-      i++
-    } else {
-      current += ch
-      i++
-    }
-  }
+		if (ch === "'") {
+			current += ch
+			i++
+			while (i < expr.length && expr[i] !== "'") {
+				current += expr[i]
+				i++
+			}
+			if (i < expr.length) {
+				current += expr[i]
+				i++
+			}
+		} else if (ch === '$' && expr[i + 1] === '{') {
+			current += ch
+			i++
+			while (i < expr.length && expr[i] !== '}') {
+				current += expr[i]
+				i++
+			}
+			if (i < expr.length) {
+				current += expr[i]
+				i++
+			}
+		} else if (ch === '+') {
+			parts.push(current)
+			current = ''
+			i++
+		} else {
+			current += ch
+			i++
+		}
+	}
 
-  if (current.trim()) {
-    parts.push(current)
-  }
+	if (current.trim()) {
+		parts.push(current)
+	}
 
-  return parts
+	return parts
 }
 
-// ---------------------------------------------------------------------------
-// Variable resolver — supports dot notation and common method calls
-// ---------------------------------------------------------------------------
 function resolveVar(
-  varPath: string,
-  data: Record<string, unknown>,
-  i18n: Record<string, string>
+	varPath: string,
+	data: Record<string, unknown>,
+	i18n: Record<string, string>
 ): unknown {
-  const msgMatch = varPath.match(/^#messages\.msg\(([^)]+)\)$/)
-  if (msgMatch) {
-    return resolveMessagesMsg(msgMatch[1], data, i18n)
-  }
+	const msgMatch = varPath.match(/^#messages\.msg\(([^)]+)\)$/)
+	if (msgMatch) {
+		return resolveMessagesMsg(msgMatch[1], data, i18n)
+	}
 
-  const methodMatch = varPath.match(/^(.+)\.(\w+)\(\)$/)
-  if (methodMatch) {
-    const objectPath = methodMatch[1]
-    const methodName = methodMatch[2]
-    const target = resolveVar(objectPath, data, i18n)
+	const methodMatch = varPath.match(/^(.+)\.(\w+)\(\)$/)
+	if (methodMatch) {
+		const objectPath = methodMatch[1]
+		const methodName = methodMatch[2]
+		const target = resolveVar(objectPath, data, i18n)
 
-    if (Array.isArray(target)) {
-      if (methodName === 'size' || methodName === 'length') return target.length
-      if (methodName === 'isEmpty') return target.length === 0
-    }
+		if (Array.isArray(target)) {
+			if (methodName === 'size' || methodName === 'length') {
+				return target.length
+			}
+			if (methodName === 'isEmpty') {
+				return target.length === 0
+			}
+		}
 
-    if (typeof target === 'string') {
-      if (methodName === 'length') return target.length
-      if (methodName === 'isEmpty') return target.length === 0
-      if (methodName === 'toUpperCase') return target.toUpperCase()
-      if (methodName === 'toLowerCase') return target.toLowerCase()
-      if (methodName === 'trim') return target.trim()
-    }
+		if (typeof target === 'string') {
+			if (methodName === 'length') {
+				return target.length
+			}
+			if (methodName === 'isEmpty') {
+				return target.length === 0
+			}
+			if (methodName === 'toUpperCase') {
+				return target.toUpperCase()
+			}
+			if (methodName === 'toLowerCase') {
+				return target.toLowerCase()
+			}
+			if (methodName === 'trim') {
+				return target.trim()
+			}
+		}
 
-    return `{{${varPath}}}`
-  }
+		return `{{${varPath}}}`
+	}
 
-  const keys = varPath.split('.')
-  let current: unknown = data
-  for (const key of keys) {
-    if (current === null || current === undefined || typeof current !== 'object') {
-      return `{{${varPath}}}`
-    }
-    current = (current as Record<string, unknown>)[key]
-  }
-  return current ?? `{{${varPath}}}`
+	const keys = varPath.split('.')
+	let current: unknown = data
+	for (const key of keys) {
+		if (current === null || current === undefined || typeof current !== 'object') {
+			return `{{${varPath}}}`
+		}
+		current = (current as Record<string, unknown>)[key]
+	}
+	return current ?? `{{${varPath}}}`
 }
 
-// ---------------------------------------------------------------------------
-// HTML escape
-// ---------------------------------------------------------------------------
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+	return text
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
 }
 
-// ---------------------------------------------------------------------------
-// Wrap the processed HTML with a small dev toolbar
-// ---------------------------------------------------------------------------
 function wrapWithToolbar(
-  html: string,
-  filename: string,
-  engine: 'java' | 'js'
+	html: string,
+	filename: string,
+	engine: 'java' | 'js'
 ): string {
-  const engineLabel = engine === 'java'
-    ? `<span style="background:#a6e3a1;color:#1e1e2e;border-radius:4px;padding:1px 6px;font-weight:bold;margin-left:6px;">☕ Java</span>`
-    : `<span style="background:#f9e2af;color:#1e1e2e;border-radius:4px;padding:1px 6px;font-weight:bold;margin-left:6px;">🟨 JS Fallback</span>`
+	const engineLabel = engine === 'java'
+		? `<span style="background:#a6e3a1;color:#1e1e2e;border-radius:4px;padding:1px 6px;font-weight:bold;margin-left:6px;">☕ Java</span>`
+		: `<span style="background:#f9e2af;color:#1e1e2e;border-radius:4px;padding:1px 6px;font-weight:bold;margin-left:6px;">🟨 JS Fallback</span>`
 
-  const toolbar = `
+	const toolbar = `
   <div style="
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -699,11 +734,11 @@ function wrapWithToolbar(
   </div>
   <div style="height:28px;"></div>`
 
-  if (html.includes('<body>')) {
-    return html.replace('<body>', `<body>${toolbar}`)
-  }
-  if (html.includes('<body')) {
-    return html.replace(/(<body[^>]*>)/, `$1${toolbar}`)
-  }
-  return toolbar + html
+	if (html.includes('<body>')) {
+		return html.replace('<body>', `<body>${toolbar}`)
+	}
+	if (html.includes('<body')) {
+		return html.replace(/(<body[^>]*>)/, `$1${toolbar}`)
+	}
+	return toolbar + html
 }
